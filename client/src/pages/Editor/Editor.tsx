@@ -1,196 +1,136 @@
-import { useEffect, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useEffect, useRef, useState } from 'react';
+import { useYDocument } from '../../hooks/useYDocument';
+import { useParams } from 'react-router-dom';
 
-import { deleteDocument, getDocumentById } from "../../api/documentApi";
-import type { Document } from "../../types/document";
-import { socket } from "../../socket/socket";
-
-import {
-  applyOperations,
-  generateOperations,
-} from "@collab/shared";
-
-function Editor() {
+/**
+ * Deliberately a plain <textarea> bound to a Y.Text, not a rich-text
+ * framework — this keeps the collaboration/sync layer the star of the
+ * project. Swap in Tiptap + y-prosemirror later; the provider/hook below
+ * don't change, only this component would.
+ */
+export default function Editor() {
   const { id } = useParams();
 
-  const [document, setDocument] = useState<Document>();
-  const navigate = useNavigate();
-  const currentVersion = useRef(0);
+  if (!id) {
+    return <div>Invalid document id.</div>;
+  }
 
-  // Socket Connection
+  // const { doc, provider, status, synced } = useYDocument(id);
+  // const { doc, provider, status, synced } = useYDocument(documentId);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [text, setText] = useState('');
+  const applyingRemoteChange = useRef(false);
+  const { doc, status, synced } = useYDocument(id);
+
   useEffect(() => {
-    const handleConnect = () => {
-      if (!id) return;
+    if (!doc) return;
+    const ytext = doc.getText('content');
 
-      socket.emit("join-document", id);
+    // Reflect current state (e.g. loaded from IndexedDB instantly, even
+    // before the server round trip completes).
+    setText(ytext.toString());
+
+    const observer = () => {
+      applyingRemoteChange.current = true;
+      setText(ytext.toString());
+      applyingRemoteChange.current = false;
     };
+    ytext.observe(observer);
+    return () => ytext.unobserve(observer);
+  }, [doc]);
 
-    socket.on("connect", handleConnect);
-    
-    socket.on(
-      "document-load",
-      ({
-        content,
-        version,
-      }: {
-        content: string;
-        version: number;
-      }) => {
-        currentVersion.current = version;
-        setDocument((prev) => {
-          if (!prev) return prev;
+  function handleChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
+    if (!doc || applyingRemoteChange.current) return;
+    const ytext = doc.getText('content');
+    const newValue = e.target.value;
+    const oldValue = ytext.toString();
 
-          return {
-            ...prev,
-            content,
-            version,
-          };
-        });
-      }
-    );
-
-    socket.on(
-      "document-operation",
-      ({
-        operations,
-        version,
-      }: {
-        operations: any[];
-        version: number;
-      }) => {
-        setDocument((prev) => {
-          if (!prev) return prev;
-          return {
-            ...prev,
-            content: applyOperations(
-              prev.content,
-              operations
-            ),
-            version,
-          };
-        });
-        currentVersion.current = version;
-      }
-    );
-
-    socket.on(
-      "operation-accepted",
-      ({ version }: { version: number }) => {
-        currentVersion.current = version;
-        setDocument((prev) => {
-          if (!prev) return prev;
-
-          return {
-            ...prev,
-            version,
-          };
-        });
-      }
-    );
-
-    socket.on(
-      "operation-error",
-      ({ message }: { message: string }) => {
-        console.error("Operation Error:", message);
-      }
-    );
-
-    socket.connect();
-
-    return () => {
-      socket.off("connect", handleConnect);
-      socket.off("document-load");
-      socket.off("document-operation");
-      socket.off("operation-accepted");
-      socket.off("operation-error");
-
-      socket.disconnect();
-    };
-  }, [id]);
-
-  // Initial Document Fetch
-  useEffect(() => {
-    const fetchDocument = async () => {
-      if (!id) return;
-
-      try {
-        const data = await getDocumentById(id);
-        setDocument(data);
-        currentVersion.current = data.version;
-      } catch (error) {
-        console.error("Can't find document:", error);
-      }
-    };
-
-    fetchDocument();
-  }, [id]);
-
-  // Delete Document
-  const handleDelete = async () => {
-    if (!document) return;
-
-    try {
-      await deleteDocument(document._id);
-      navigate("/");
-    } catch (error) {
-      console.error(error);
+    // Minimal diff: find common prefix/suffix, replace only what changed.
+    // This preserves other users' concurrent edits far better than
+    // "delete everything, insert everything" would, and is what keeps
+    // cursor position sane during fast typing.
+    let start = 0;
+    while (
+      start < oldValue.length &&
+      start < newValue.length &&
+      oldValue[start] === newValue[start]
+    ) {
+      start++;
     }
-  };
+    let oldEnd = oldValue.length;
+    let newEnd = newValue.length;
+    while (
+      oldEnd > start &&
+      newEnd > start &&
+      oldValue[oldEnd - 1] === newValue[newEnd - 1]
+    ) {
+      oldEnd--;
+      newEnd--;
+    }
 
-  // Local Edit
-  const handleContentChange = (
-    e: React.ChangeEvent<HTMLTextAreaElement>
-  ) => {
-    if (!document) return;
+    doc.transact(() => {
+      if (oldEnd > start) ytext.delete(start, oldEnd - start);
+      if (newEnd > start) ytext.insert(start, newValue.slice(start, newEnd));
+    }, 'local-user-edit');
 
-    const newContent = e.target.value;
-
-    const operations = generateOperations({
-      documentId: document._id,
-      baseVersion: currentVersion.current,
-      oldText: document.content,
-      newText: newContent,
-    });
-
-    if (operations.length === 0) return;
-
-    socket.emit("document-operation", operations);
-    
-
-    // Immediate local update for responsiveness
-    setDocument({
-      ...document,
-      content: newContent,
-    });
-  };
-
-  if (!document) {
-    return <h2>Loading...</h2>;
+    setText(newValue);
   }
 
   return (
-    <>
-      <h1>Editor Page</h1>
-
-      <h2>{document.title}</h2>
-
-      <p>Owner: {document.owner}</p>
-
-      <button onClick={handleDelete}>
-        Delete Document
-      </button>
-
+    <div style={{ maxWidth: 760, margin: '0 auto', padding: 24 }}>
+      <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 12 }}>
+        <StatusBadge status={status} synced={synced} />
+      </div>
       <textarea
-        value={document.content}
-        onChange={handleContentChange}
-        rows={15}
-        cols={80}
+        ref={textareaRef}
+        value={text}
+        onChange={handleChange}
+        placeholder={doc ? 'Start typing...' : 'Connecting...'}
+        disabled={!doc}
         style={{
-          margin: "10px 10px",
+          width: '100%',
+          minHeight: 400,
+          padding: 16,
+          fontSize: 16,
+          fontFamily: 'ui-monospace, monospace',
+          lineHeight: 1.5,
         }}
       />
-    </>
+    </div>
   );
 }
 
-export default Editor;
+function StatusBadge({
+  status,
+  synced,
+}: {
+  status: 'connecting' | 'connected' | 'disconnected';
+  synced: boolean;
+}) {
+  const label =
+    status === 'disconnected'
+      ? 'Offline — edits saved locally, will sync on reconnect'
+      : status === 'connecting'
+        ? 'Connecting...'
+        : synced
+          ? 'Synced'
+          : 'Syncing...';
+
+  const color =
+    status === 'disconnected' ? '#b45309' : status === 'connected' && synced ? '#15803d' : '#6b7280';
+
+  return (
+    <span style={{ fontSize: 13, color, display: 'flex', alignItems: 'center', gap: 6 }}>
+      <span
+        style={{
+          width: 8,
+          height: 8,
+          borderRadius: '50%',
+          background: color,
+          display: 'inline-block',
+        }}
+      />
+      {label}
+    </span>
+  );
+}

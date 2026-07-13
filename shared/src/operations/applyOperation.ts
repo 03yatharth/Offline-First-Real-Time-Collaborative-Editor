@@ -26,17 +26,3 @@ export function applyOperation(
             );
     }
 }
-
-export function applyOperations(
-    document: string,
-    operations: Operation[]
-): string {
-
-    let content = document;
-
-    for (const operation of operations) {
-        content = applyOperation(content, operation);
-    }
-
-    return content;
-}

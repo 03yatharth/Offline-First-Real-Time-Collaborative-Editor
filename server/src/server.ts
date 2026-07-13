@@ -1,33 +1,49 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import connectDB from "./config/db";
-import documentRoutes from "./routes/documentRoutes";
 import { createServer } from "http";
-import { initializeSocket } from "./socket";
-import { registerDocumentSocket } from "./socket/documentSocket";
+
+import connectDB from "./config/db.js";
+import documentRoutes from "./routes/documentRoutes.js";
+import { initializeSocket } from "./socket/index.js";
 
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
-const server = createServer(app);
+const PORT = process.env.PORT || 4000;
+const CLIENT_ORIGIN =
+  process.env.CLIENT_ORIGIN || "http://localhost:5173";
+
+app.use(
+  cors({
+    origin: CLIENT_ORIGIN,
+  })
+);
 
 app.use(express.json());
-app.use(cors());
+
+app.get("/health", (_req, res) => {
+  res.json({ status: "ok" });
+});
+
 app.use("/api/documents", documentRoutes);
 
-const startServer = async () => {
+const httpServer = createServer(app);
+
+async function startServer() {
   try {
     await connectDB();
-    const io = initializeSocket(server);
-    registerDocumentSocket(io)
-    server.listen(PORT, () => {
-      console.log(`🚀 Server running on http://localhost:${PORT}`);
+    console.log("[server] MongoDB connected");
+
+    initializeSocket(httpServer);
+
+    httpServer.listen(PORT, () => {
+      console.log(`[server] listening on :${PORT}`);
     });
-  } catch (error) {
-    console.error("Failed to start server", error);
+  } catch (err) {
+    console.error("[server] Failed to start server", err);
+    process.exit(1);
   }
-};
+}
 
 startServer();

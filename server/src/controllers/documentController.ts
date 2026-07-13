@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import Document from "../models/Document";
+import Document from "../models/Document.js";
 import mongoose from "mongoose";
 
 export const createDocument = async (
