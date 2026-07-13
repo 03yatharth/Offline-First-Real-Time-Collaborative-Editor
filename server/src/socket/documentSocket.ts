@@ -14,16 +14,31 @@ import {
 } from '@collab/shared';
 
 const socketAwarenessIds = new Map<string, Set<number>>();
-const registeredDocuments = new Set<string>();
+
+interface RegisteredDocument {
+  updateListener: (update: Uint8Array, origin: unknown) => void;
+  awarenessListener: (
+    changes: {
+      added: number[];
+      updated: number[];
+      removed: number[];
+    },
+    origin: unknown
+  ) => void;
+}
+
+const registeredDocuments = new Map<string, RegisteredDocument>();
 
 export function registerDocumentSocket(io: Server) {
   io.on('connection', (socket: Socket) => {
     let joinedDocumentId: string | null = null;
+    let hasLeftCurrentDocument = false;
 
     socket.on(EVT_JOIN, async (documentId: string) => {
       if (typeof documentId !== 'string' || !documentId) return;
 
       joinedDocumentId = documentId;
+      hasLeftCurrentDocument = false;
 
       socket.join(documentId);
       socketAwarenessIds.set(socket.id, new Set());
@@ -35,9 +50,7 @@ export function registerDocumentSocket(io: Server) {
           registeredDocuments.has(documentId)
       );
       if (!registeredDocuments.has(documentId)) {
-        registeredDocuments.add(documentId);
-
-        session.doc.on('update', (update, origin) => {
+        const updateListener = (update: Uint8Array, origin: unknown) => {
           const encoder = encoding.createEncoder();
 
           encoding.writeVarUint(encoder, MESSAGE_SYNC);
@@ -49,59 +62,62 @@ export function registerDocumentSocket(io: Server) {
             typeof origin === 'string' ? origin : undefined;
 
           if (originSocketId) {
-            io.to(documentId).except(originSocketId).emit(
-              EVT_MESSAGE,
-              payload,
-              documentId
-            );
+            io.to(documentId)
+              .except(originSocketId)
+              .emit(EVT_MESSAGE, payload, documentId);
           } else {
             io.to(documentId).emit(EVT_MESSAGE, payload, documentId);
           }
-        });
+        };
 
-        session.awareness.on(
-          'update',
-          (
-            changes: {
-              added: number[];
-              updated: number[];
-              removed: number[];
-            },
-            origin: unknown
-          ) => {
-            const changedIds = [
-              ...changes.added,
-              ...changes.updated,
-              ...changes.removed,
-            ];
+        const awarenessListener = (
+          changes: {
+            added: number[];
+            updated: number[];
+            removed: number[];
+          },
+          origin: unknown
+        ) => {
+          const changedIds = [
+            ...changes.added,
+            ...changes.updated,
+            ...changes.removed,
+          ];
 
-            if (changedIds.length === 0) return;
+          if (changedIds.length === 0) return;
 
-            const encoder = encoding.createEncoder();
+          const encoder = encoding.createEncoder();
 
-            encoding.writeVarUint(encoder, MESSAGE_AWARENESS);
-            encoding.writeVarUint8Array(
-              encoder,
-              awarenessProtocol.encodeAwarenessUpdate(
-                session.awareness,
-                changedIds
-              )
-            );
+          encoding.writeVarUint(encoder, MESSAGE_AWARENESS);
+          encoding.writeVarUint8Array(
+            encoder,
+            awarenessProtocol.encodeAwarenessUpdate(
+              session.awareness,
+              changedIds
+            )
+          );
 
-            const payload = Buffer.from(encoding.toUint8Array(encoder));
+          const payload = Buffer.from(encoding.toUint8Array(encoder));
 
-            const originSocketId =
-              typeof origin === 'string' ? origin : undefined;
+          const originSocketId =
+            typeof origin === 'string' ? origin : undefined;
 
-            if (originSocketId) {
-              io.to(documentId)
-                .except(originSocketId)
-                .emit(EVT_MESSAGE, payload, documentId);
-            } else {
-              io.to(documentId).emit(EVT_MESSAGE, payload, documentId);
-            }
+          if (originSocketId) {
+            io.to(documentId)
+              .except(originSocketId)
+              .emit(EVT_MESSAGE, payload, documentId);
+          } else {
+            io.to(documentId).emit(EVT_MESSAGE, payload, documentId);
           }
-        );
+        };
+
+        session.doc.on("update", updateListener);
+        session.awareness.on("update", awarenessListener);
+
+        registeredDocuments.set(documentId, {
+          updateListener,
+          awarenessListener,
+        });
       }
 
       yDocumentManager.addConnection(documentId);
@@ -206,13 +222,24 @@ export function registerDocumentSocket(io: Server) {
     );
 
     socket.on(EVT_LEAVE, async (documentId: string) => {
+      if (hasLeftCurrentDocument) return;
+
+      hasLeftCurrentDocument = true;
+      joinedDocumentId = null;
+
       await leaveDocument(documentId);
     });
 
-    socket.on('disconnect', async () => {
-      if (joinedDocumentId) {
-        await leaveDocument(joinedDocumentId);
-      }
+    socket.on("disconnect", async () => {
+      if (!joinedDocumentId) return;
+      if (hasLeftCurrentDocument) return;
+
+      hasLeftCurrentDocument = true;
+
+      const docId = joinedDocumentId;
+      joinedDocumentId = null;
+
+      await leaveDocument(docId);
     });
 
     async function leaveDocument(documentId: string) {
@@ -232,7 +259,18 @@ export function registerDocumentSocket(io: Server) {
 
       socketAwarenessIds.delete(socket.id);
 
-      await yDocumentManager.removeConnection(documentId);
+      const destroyed = await yDocumentManager.removeConnection(documentId);
+
+      if (destroyed) {
+        const listeners = registeredDocuments.get(documentId);
+
+        if (listeners) {
+          session.doc.off("update", listeners.updateListener);
+          session.awareness.off("update", listeners.awarenessListener);
+
+          registeredDocuments.delete(documentId);
+        }
+      }
     }
   });
 }

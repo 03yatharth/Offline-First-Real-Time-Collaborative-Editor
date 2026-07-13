@@ -16,7 +16,10 @@ class YDocumentManager {
 
   async getOrCreate(documentId: string): Promise<DocSession> {
     let session = this.sessions.get(documentId);
-    if (session) return session;
+
+    if (session) {
+      return session;
+    }
 
     const doc = new Y.Doc();
     const awareness = new Awareness(doc);
@@ -28,7 +31,7 @@ class YDocumentManager {
         Y.applyUpdate(doc, new Uint8Array(saved.state));
       } catch (err) {
         console.error(
-          `[YDocumentManager] Failed to apply saved state for ${documentId}:`,
+          `[YDocumentManager] Failed to restore document ${documentId}:`,
           err
         );
       }
@@ -44,80 +47,81 @@ class YDocumentManager {
     this.sessions.set(documentId, session);
 
     doc.on('update', () => {
-      this.scheduleSave(documentId, session!);
+      this.schedulePersist(documentId, session!);
     });
 
     return session;
   }
 
-  private scheduleSave(documentId: string, session: DocSession) {
+  private schedulePersist(documentId: string, session: DocSession) {
     if (session.saveTimeout) {
       clearTimeout(session.saveTimeout);
     }
 
     session.saveTimeout = setTimeout(async () => {
+      session.saveTimeout = null;
+      await this.persist(documentId, session);
+    }, PERSIST_DEBOUNCE_MS);
+  }
+
+  private async persist(documentId: string, session: DocSession) {
+    try {
       const state = Buffer.from(Y.encodeStateAsUpdate(session.doc));
 
-      try {
-        await YDocStateModel.updateOne(
-          { documentId },
-          {
-            $set: {
-              state,
-              updatedAt: new Date(),
-            },
+      await YDocStateModel.updateOne(
+        { documentId },
+        {
+          $set: {
+            state,
+            updatedAt: new Date(),
           },
-          { upsert: true }
-        );
-      } catch (err) {
-        console.error(
-          `[YDocumentManager] Persist failed for ${documentId}:`,
-          err
-        );
-      }
-    }, PERSIST_DEBOUNCE_MS);
+        },
+        {
+          upsert: true,
+        }
+      );
+    } catch (err) {
+      console.error(
+        `[YDocumentManager] Persist failed for ${documentId}:`,
+        err
+      );
+    }
   }
 
   addConnection(documentId: string) {
     const session = this.sessions.get(documentId);
-    if (session) {
-      session.connectionCount++;
-    }
-  }
 
-  async removeConnection(documentId: string) {
-    const session = this.sessions.get(documentId);
     if (!session) return;
 
-    session.connectionCount--;
+    session.connectionCount++;
+  }
 
-    if (session.connectionCount <= 0) {
-      if (session.saveTimeout) {
-        clearTimeout(session.saveTimeout);
-      }
+  async removeConnection(documentId: string): Promise<boolean> {
+    const session = this.sessions.get(documentId);
 
-      const state = Buffer.from(Y.encodeStateAsUpdate(session.doc));
-
-      try {
-        await YDocStateModel.updateOne(
-          { documentId },
-          {
-            $set: {
-              state,
-              updatedAt: new Date(),
-            },
-          },
-          { upsert: true }
-        );
-      } catch (err) {
-        console.error(
-          `[YDocumentManager] Final persist failed for ${documentId}:`,
-          err
-        );
-      }
-
-      this.sessions.delete(documentId);
+    if (!session) {
+      return false;
     }
+
+    session.connectionCount = Math.max(0, session.connectionCount - 1);
+
+    if (session.connectionCount > 0) {
+      return false;
+    }
+
+    if (session.saveTimeout) {
+      clearTimeout(session.saveTimeout);
+      session.saveTimeout = null;
+    }
+
+    await this.persist(documentId, session);
+
+    session.doc.destroy();
+    session.awareness.destroy();
+
+    this.sessions.delete(documentId);
+
+    return true;
   }
 }
 
