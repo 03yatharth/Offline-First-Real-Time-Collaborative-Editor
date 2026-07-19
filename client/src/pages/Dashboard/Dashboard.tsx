@@ -12,6 +12,7 @@ import {
   deleteDocument,
   getDocuments,
   renameDocument,
+  addCollaborator,
 } from "../../services/documentApi";
 
 import type { DocumentMetadata } from "../../types/document";
@@ -136,6 +137,30 @@ export default function Dashboard() {
     }
   }
 
+  async function handleShare(document: DocumentMetadata) {
+    const email = window.prompt(
+      "Enter collaborator email:"
+    );
+
+    if (!email) return;
+
+    try {
+      await addCollaborator(
+        document._id,
+        email
+      );
+
+      await loadDocuments();
+
+    } catch (error) {
+      console.error(error);
+
+      setPageError(
+        "Failed to share document."
+      );
+    }
+  }
+
   function handleDelete(document: DocumentMetadata) {
     setDocumentToDelete(document);
   }
@@ -256,6 +281,8 @@ export default function Dashboard() {
         </div>
       )}
 
+      
+
       {loading ? (
         <div className={styles.loading}>
           Loading documents...
@@ -273,6 +300,7 @@ export default function Dashboard() {
               document={document}
               onRename={handleRename}
               onDelete={handleDelete}
+              onShare={handleShare}
             />
           ))}
         </div>

@@ -5,6 +5,9 @@ export interface IDocument {
   title: string;
   content: string;
   owner: mongoose.Types.ObjectId;
+
+  collaborators: mongoose.Types.ObjectId[];
+
   isPublic: boolean;
   lastOpenedAt: Date;
   version: number;
@@ -35,6 +38,14 @@ const documentSchema = new Schema<IDocument>(
       required: true,
     },
 
+    collaborators: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "User",
+        default: [],
+      },
+    ],
+
     isPublic: {
       type: Boolean,
       default: false,
@@ -53,4 +64,5 @@ const documentSchema = new Schema<IDocument>(
 const Document = model<IDocument>("Document", documentSchema);
 
 export type DocumentModel = HydratedDocument<IDocument>;
+
 export default Document;

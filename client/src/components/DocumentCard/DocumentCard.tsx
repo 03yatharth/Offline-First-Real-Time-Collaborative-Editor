@@ -5,12 +5,14 @@ interface DocumentCardProps {
   document: DocumentMetadata;
   onRename: (document: DocumentMetadata) => void;
   onDelete: (document: DocumentMetadata) => void;
+  onShare: (document: DocumentMetadata) => void;
 }
 
 export default function DocumentCard({
   document,
   onRename,
   onDelete,
+  onShare,
 }: DocumentCardProps) {
   const navigate = useNavigate();
 
@@ -62,6 +64,12 @@ export default function DocumentCard({
           onClick={() => onRename(document)}
         >
           Rename
+        </button>
+
+        <button
+          onClick={() => onShare(document)}
+        >
+          Share
         </button>
 
         <button

@@ -61,7 +61,13 @@ export function registerDocumentSocket(io: Server) {
           return;
         }
 
-        if (document.owner.toString() !== userId) {
+        const hasAccess =
+          document.owner.toString() === userId ||
+          document.collaborators.some(
+            (collaborator) => collaborator.toString() === userId
+          );
+
+        if (!hasAccess) {
           socket.emit(EVT_JOIN_ERROR, "Access denied.");
           socket.disconnect(true);
           return;
@@ -184,7 +190,8 @@ export function registerDocumentSocket(io: Server) {
       
     }
     catch(error){
-      
+      socket.emit(EVT_JOIN_ERROR, "Unable to open document.");
+
     }
     });
 
