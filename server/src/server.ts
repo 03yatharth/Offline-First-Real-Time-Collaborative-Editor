@@ -7,6 +7,8 @@ import connectDB from "./config/db.js";
 import documentRoutes from "./routes/documentRoutes.js";
 import { initializeSocket } from "./socket/index.js";
 
+import authRoutes from "./routes/authRoutes.js";
+
 dotenv.config();
 
 const app = express();
@@ -22,23 +24,18 @@ app.use(
 
 app.use(express.json());
 
-app.get("/health", (_req, res) => {
-  res.json({ status: "ok" });
-});
-
 app.use("/api/documents", documentRoutes);
+app.use("/api/auth", authRoutes);
 
 const httpServer = createServer(app);
 
 async function startServer() {
   try {
     await connectDB();
-    console.log("[server] MongoDB connected");
 
     initializeSocket(httpServer);
 
     httpServer.listen(PORT, () => {
-      console.log(`[server] listening on :${PORT}`);
     });
   } catch (err) {
     console.error("[server] Failed to start server", err);

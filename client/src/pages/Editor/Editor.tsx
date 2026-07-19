@@ -1,36 +1,28 @@
-import { useEffect, useRef, useState } from 'react';
+import { useContext, useEffect, useRef, useState } from "react";
 import { useYDocument } from '../../hooks/useYDocument';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
+import { AuthContext } from "../../context/AuthContext";
+import Collaborators from "../../components/Collaborators/Collaborators";
 
-/**
- * Deliberately a plain <textarea> bound to a Y.Text, not a rich-text
- * framework — this keeps the collaboration/sync layer the star of the
- * project. Swap in Tiptap + y-prosemirror later; the provider/hook below
- * don't change, only this component would.
- */
+
 export default function Editor() {
   const { id } = useParams();
-
-  if (!id) {
-    return <div>Invalid document id.</div>;
-  }
-
-  // const { doc, provider, status, synced } = useYDocument(id);
-  // const { doc, provider, status, synced } = useYDocument(documentId);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [text, setText] = useState('');
   const applyingRemoteChange = useRef(false);
-  const { doc, status, synced } = useYDocument(id);
+  const { doc, provider, status, synced } = useYDocument(id || "");
+  const auth = useContext(AuthContext);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!doc) return;
     const ytext = doc.getText('content');
 
-    // Reflect current state (e.g. loaded from IndexedDB instantly, even
-    // before the server round trip completes).
     setText(ytext.toString());
 
     const observer = () => {
+      
+
       applyingRemoteChange.current = true;
       setText(ytext.toString());
       applyingRemoteChange.current = false;
@@ -39,16 +31,46 @@ export default function Editor() {
     return () => ytext.unobserve(observer);
   }, [doc]);
 
+  useEffect(() => {
+    if (!provider) return;
+    if (!auth?.user) return;
+
+    provider.awareness.setLocalStateField("user", {
+      id: auth.user.id,
+      name: auth.user.username,
+    });
+
+    return () => {
+      provider.awareness.setLocalState(null);
+    };
+  }, [provider, auth?.user]);
+
+  useEffect(() => {
+  function handleJoinError() {
+    navigate("/", { replace: true });
+  }
+
+  window.addEventListener(
+    "document:join-error",
+    handleJoinError
+  );
+
+  return () => {
+    window.removeEventListener(
+      "document:join-error",
+      handleJoinError
+    );
+  };
+}, [navigate]);
+
   function handleChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
     if (!doc || applyingRemoteChange.current) return;
+    
     const ytext = doc.getText('content');
     const newValue = e.target.value;
     const oldValue = ytext.toString();
 
-    // Minimal diff: find common prefix/suffix, replace only what changed.
-    // This preserves other users' concurrent edits far better than
-    // "delete everything, insert everything" would, and is what keeps
-    // cursor position sane during fast typing.
+    
     let start = 0;
     while (
       start < oldValue.length &&
@@ -73,13 +95,21 @@ export default function Editor() {
       if (newEnd > start) ytext.insert(start, newValue.slice(start, newEnd));
     }, 'local-user-edit');
 
-    setText(newValue);
+  }
+
+  if (!id || id.length==0) {
+    return <div>Invalid document id.</div>;
   }
 
   return (
     <div style={{ maxWidth: 760, margin: '0 auto', padding: 24 }}>
       <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 12 }}>
         <StatusBadge status={status} synced={synced} />
+        {provider && (
+          <div style={{ marginBottom: 16 }}>
+            <Collaborators awareness={provider.awareness} />
+          </div>
+        )}
       </div>
       <textarea
         ref={textareaRef}

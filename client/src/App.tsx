@@ -1,19 +1,42 @@
-import { Route, Routes } from 'react-router-dom'
-import './App.css'
-import Dashboard from './pages/Dashboard/Dashboard'
-import Editor from './pages/Editor/Editor'
-import { useParams } from "react-router-dom";
+import { Route, Routes, Navigate } from "react-router-dom";
 
-function App() {
-  const { id } = useParams();
+import Dashboard from "./pages/Dashboard/Dashboard";
+import Editor from "./pages/Editor/Editor";
+import Login from "./pages/Login/Login";
+import Register from "./pages/Register/Register";
 
+import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
+
+export default function App() {
   return (
     <Routes>
-      <Route path = "/" element ={<Dashboard/>}/>
-      <Route path = "/documents/:id" element ={<Editor />}/>
-      
-    </Routes>
-  )
-}
+      {/* Public */}
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
 
-export default App
+      {/* Protected */}
+      <Route
+        path="/"
+        element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/documents/:id"
+        element={
+          <ProtectedRoute>
+            <Editor />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="*"
+        element={<Navigate to="/" replace />}
+      />
+    </Routes>
+  );
+}

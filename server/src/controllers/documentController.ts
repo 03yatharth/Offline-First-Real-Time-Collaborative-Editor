@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import Document from "../models/Document.js";
 import mongoose from "mongoose";
 
+
 export const createDocument = async (
   req: Request,
   res: Response
@@ -13,17 +14,17 @@ export const createDocument = async (
       });
     }
 
-    const { title, owner } = req.body;
+    const { title } = req.body;
 
-    if (!title || !owner) {
+    if (!title) {
       return res.status(400).json({
-        message: "Title and Owner are required",
+        message: "Title is required",
       });
     }
 
     const document = await Document.create({
       title,
-      owner,
+      owner: new mongoose.Types.ObjectId(req.user!.userId),
     });
 
     return res.status(201).json(document);
@@ -42,7 +43,11 @@ export const getDocuments = async (
   res: Response
 ) => {
   try {
-    const documents = await Document.find();
+    const documents = await Document.find({
+      owner: req.user!.userId,
+    }).sort({
+      updatedAt: -1,
+    });
 
     return res.status(200).json(documents);
   } catch (error) {
@@ -65,7 +70,10 @@ export const getDocumentById = async(
         message : "Invalid document ID"
       })
     }
-    const document = await Document.findById(id);
+    const document = await Document.findOne({
+      _id: id,
+      owner: req.user!.userId,
+    });
     if(!document){
       return res.status(404).json({
         message : "No Document Found"
@@ -95,7 +103,10 @@ export const patchDocument = async (
       });
     }
 
-    const document = await Document.findById(id);
+    const document = await Document.findOne({
+      _id: id,
+      owner: req.user!.userId,
+    });
 
     if (!document) {
       return res.status(404).json({
@@ -141,7 +152,10 @@ export const deleteDocument = async(
         message : "Invalid document ID"
       })
     }
-    const document = await Document.findById(id);
+    const document = await Document.findOne({
+      _id: id,
+      owner: req.user!.userId,
+    });
     if(!document){
       return res.status(404).json({
         message : "No Document Found"

@@ -9,3 +9,13 @@ export interface Document {
   updatedAt: string;
   version : number
 }
+
+export interface DocumentMetadata {
+  _id: string;
+  title: string;
+  owner: string;
+  isPublic: boolean;
+  lastOpenedAt: string;
+  createdAt: string;
+  updatedAt: string;
+}

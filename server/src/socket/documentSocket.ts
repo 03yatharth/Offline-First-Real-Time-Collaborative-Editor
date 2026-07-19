@@ -4,6 +4,7 @@ import * as awarenessProtocol from 'y-protocols/awareness.js';
 import * as encoding from 'lib0/encoding.js';
 import * as decoding from 'lib0/decoding.js';
 import { yDocumentManager } from '../collaboration/YDocumentManager.js';
+import Document from "../models/Document.js";
 import {
   MESSAGE_SYNC,
   MESSAGE_AWARENESS,
@@ -11,7 +12,9 @@ import {
   EVT_LEAVE,
   EVT_MESSAGE,
   EVT_SYNCED,
+  EVT_JOIN_ERROR,
 } from '@collab/shared';
+import mongoose from 'mongoose';
 
 const socketAwarenessIds = new Map<string, Set<number>>();
 
@@ -31,129 +34,158 @@ const registeredDocuments = new Map<string, RegisteredDocument>();
 
 export function registerDocumentSocket(io: Server) {
   io.on('connection', (socket: Socket) => {
+    const userId = socket.data.userId as string;
     let joinedDocumentId: string | null = null;
     let hasLeftCurrentDocument = false;
 
+    
     socket.on(EVT_JOIN, async (documentId: string) => {
-      if (typeof documentId !== 'string' || !documentId) return;
+      try{
+        if (typeof documentId !== 'string' || !documentId) return;
 
-      joinedDocumentId = documentId;
-      hasLeftCurrentDocument = false;
+        joinedDocumentId = documentId;
+        hasLeftCurrentDocument = false;
 
-      socket.join(documentId);
-      socketAwarenessIds.set(socket.id, new Set());
+        socket.join(documentId);
+        
+        socketAwarenessIds.set(socket.id, new Set());
+        if (!mongoose.Types.ObjectId.isValid(documentId)) {
+          socket.emit(EVT_JOIN_ERROR, "Invalid document.");
+          return;
+        }
+        const document = await Document.findById(documentId);
 
-      const session = await yDocumentManager.getOrCreate(documentId);
-      console.log(
-          "join",
-          documentId,
-          registeredDocuments.has(documentId)
-      );
-      if (!registeredDocuments.has(documentId)) {
-        const updateListener = (update: Uint8Array, origin: unknown) => {
-          const encoder = encoding.createEncoder();
+        if (!document) {
+          socket.emit(EVT_JOIN_ERROR, "Document not found.");
+          socket.disconnect(true);
+          return;
+        }
 
-          encoding.writeVarUint(encoder, MESSAGE_SYNC);
-          syncProtocol.writeUpdate(encoder, update);
+        if (document.owner.toString() !== userId) {
+          socket.emit(EVT_JOIN_ERROR, "Access denied.");
+          socket.disconnect(true);
+          return;
+        }
 
-          const payload = Buffer.from(encoding.toUint8Array(encoder));
+        const session = await yDocumentManager.getOrCreate(documentId);
+        
+        if (!registeredDocuments.has(documentId)) {
+          const updateListener = (update: Uint8Array, origin: unknown) => {
+            
+            
 
-          const originSocketId =
-            typeof origin === 'string' ? origin : undefined;
+            const encoder = encoding.createEncoder();
 
-          if (originSocketId) {
-            io.to(documentId)
-              .except(originSocketId)
-              .emit(EVT_MESSAGE, payload, documentId);
-          } else {
-            io.to(documentId).emit(EVT_MESSAGE, payload, documentId);
-          }
-        };
+            encoding.writeVarUint(encoder, MESSAGE_SYNC);
+            syncProtocol.writeUpdate(encoder, update);
 
-        const awarenessListener = (
-          changes: {
-            added: number[];
-            updated: number[];
-            removed: number[];
-          },
-          origin: unknown
-        ) => {
-          const changedIds = [
-            ...changes.added,
-            ...changes.updated,
-            ...changes.removed,
-          ];
+            const payload = Buffer.from(encoding.toUint8Array(encoder));
 
-          if (changedIds.length === 0) return;
+            const originSocketId =
+              typeof origin === 'string' ? origin : undefined;
+            
+            if (originSocketId) {
 
-          const encoder = encoding.createEncoder();
+              io.to(documentId)
+                .except(originSocketId)
+                .emit(EVT_MESSAGE, payload, documentId);
+            } else {
+              io.to(documentId).emit(EVT_MESSAGE, payload, documentId);
+            }
+          };
 
-          encoding.writeVarUint(encoder, MESSAGE_AWARENESS);
-          encoding.writeVarUint8Array(
-            encoder,
-            awarenessProtocol.encodeAwarenessUpdate(
-              session.awareness,
-              changedIds
-            )
-          );
+          const awarenessListener = (
+            changes: {
+              added: number[];
+              updated: number[];
+              removed: number[];
+            },
+            origin: unknown
+          ) => {
+            const changedIds = [
+              ...changes.added,
+              ...changes.updated,
+              ...changes.removed,
+            ];
 
-          const payload = Buffer.from(encoding.toUint8Array(encoder));
+            if (changedIds.length === 0) return;
 
-          const originSocketId =
-            typeof origin === 'string' ? origin : undefined;
+            const encoder = encoding.createEncoder();
 
-          if (originSocketId) {
-            io.to(documentId)
-              .except(originSocketId)
-              .emit(EVT_MESSAGE, payload, documentId);
-          } else {
-            io.to(documentId).emit(EVT_MESSAGE, payload, documentId);
-          }
-        };
+            encoding.writeVarUint(encoder, MESSAGE_AWARENESS);
+            encoding.writeVarUint8Array(
+              encoder,
+              awarenessProtocol.encodeAwarenessUpdate(
+                session.awareness,
+                changedIds
+              )
+            );
 
-        session.doc.on("update", updateListener);
-        session.awareness.on("update", awarenessListener);
+            const payload = Buffer.from(encoding.toUint8Array(encoder));
 
-        registeredDocuments.set(documentId, {
-          updateListener,
-          awarenessListener,
-        });
-      }
+            const originSocketId =
+              typeof origin === 'string' ? origin : undefined;
 
-      yDocumentManager.addConnection(documentId);
+            if (originSocketId) {
+              io.to(documentId)
+                .except(originSocketId)
+                .emit(EVT_MESSAGE, payload, documentId);
+            } else {
+              io.to(documentId).emit(EVT_MESSAGE, payload, documentId);
+            }
+          };
+          session.doc.on("update", updateListener);
+          
+          session.awareness.on("update", awarenessListener);
 
-      const encoder = encoding.createEncoder();
-      encoding.writeVarUint(encoder, MESSAGE_SYNC);
-      syncProtocol.writeSyncStep1(encoder, session.doc);
+          registeredDocuments.set(documentId, {
+            updateListener,
+            awarenessListener,
+          });
+        }
 
-      socket.emit(
-        EVT_MESSAGE,
-        Buffer.from(encoding.toUint8Array(encoder)),
-        documentId
-      );
+        yDocumentManager.addConnection(documentId);
 
-      const states = session.awareness.getStates();
+        const encoder = encoding.createEncoder();
+        encoding.writeVarUint(encoder, MESSAGE_SYNC);
+        syncProtocol.writeSyncStep1(encoder, session.doc);
 
-      if (states.size > 0) {
-        const awarenessEncoder = encoding.createEncoder();
+        const packet = encoding.toUint8Array(encoder);
 
-        encoding.writeVarUint(awarenessEncoder, MESSAGE_AWARENESS);
-        encoding.writeVarUint8Array(
-          awarenessEncoder,
-          awarenessProtocol.encodeAwarenessUpdate(
-            session.awareness,
-            Array.from(states.keys())
-          )
-        );
+        
 
         socket.emit(
           EVT_MESSAGE,
-          Buffer.from(encoding.toUint8Array(awarenessEncoder)),
+          Buffer.from(packet),
           documentId
         );
-      }
 
-      socket.emit(EVT_SYNCED, documentId);
+        const states = session.awareness.getStates();
+
+        if (states.size > 0) {
+          const awarenessEncoder = encoding.createEncoder();
+
+          encoding.writeVarUint(awarenessEncoder, MESSAGE_AWARENESS);
+          encoding.writeVarUint8Array(
+            awarenessEncoder,
+            awarenessProtocol.encodeAwarenessUpdate(
+              session.awareness,
+              Array.from(states.keys())
+            )
+          );
+
+          socket.emit(
+            EVT_MESSAGE,
+            Buffer.from(encoding.toUint8Array(awarenessEncoder)),
+            documentId
+          );
+        }
+
+      
+    }
+    catch(error){
+      
+    }
     });
 
     socket.on(
@@ -176,20 +208,23 @@ export function registerDocumentSocket(io: Server) {
         switch (messageType) {
           case MESSAGE_SYNC: {
             encoding.writeVarUint(encoder, MESSAGE_SYNC);
-
+            
+            
             syncProtocol.readSyncMessage(
-              decoder,
-              encoder,
-              session.doc,
-              socket.id
+                decoder,
+                encoder,
+                session.doc,
+                socket.id
             );
 
             if (encoding.length(encoder) > 1) {
-              socket.emit(
-                EVT_MESSAGE,
-                Buffer.from(encoding.toUint8Array(encoder)),
-                documentId
-              );
+
+                socket.emit(
+                    EVT_MESSAGE,
+                    encoding.toUint8Array(encoder),
+                    documentId
+                );
+
             }
 
             break;

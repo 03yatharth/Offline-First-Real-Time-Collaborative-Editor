@@ -1,0 +1,82 @@
+.page {
+  max-width: 960px;
+  margin: 40px auto;
+  padding: 24px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 40px;
+}
+
+.titleSection h1 {
+  margin: 0;
+  font-size: 2rem;
+}
+
+.titleSection p {
+  margin-top: 8px;
+  color: #6b7280;
+}
+
+.createButton {
+  border: none;
+  border-radius: 8px;
+  background: #2563eb;
+  color: white;
+  padding: 12px 18px;
+  cursor: pointer;
+  font-size: 15px;
+  transition: background 0.2s;
+  margin-left: 5px;
+}
+
+.createButton:hover {
+  background: #1d4ed8;
+}
+
+.createButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.documents {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.emptyState {
+  margin-top: 80px;
+  text-align: center;
+  color: #6b7280;
+}
+
+.loading {
+  margin-top: 80px;
+  text-align: center;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.logoutButton {
+  border: 1px solid #d1d5db;
+  background: white;
+  color: #374151;
+  padding: 12px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.2s;
+  margin-left: 20px;
+}
+
+.logoutButton:hover {
+  background: #f3f4f6;
+}
+

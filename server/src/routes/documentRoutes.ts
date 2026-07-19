@@ -6,8 +6,11 @@ import {
   getDocuments,
   patchDocument,
 } from "../controllers/documentController.js";
+import { authenticate } from "../middleware/authMiddleware.js";
 
 const router = Router();
+
+router.use(authenticate);
 
 router.post("/", createDocument);
 router.get("/", getDocuments);

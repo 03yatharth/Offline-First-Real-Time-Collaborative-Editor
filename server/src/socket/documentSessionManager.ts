@@ -134,11 +134,7 @@ class DocumentSessionManager {
 
         this.socketToDocument.delete(socketId);
 
-        if (session.clients.size === 0) {
-            console.log(
-                `Document ${documentId} has no active clients`
-            );
-        }
+        
     }
 
     public processOperations(

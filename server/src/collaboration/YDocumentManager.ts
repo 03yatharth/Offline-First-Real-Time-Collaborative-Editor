@@ -24,11 +24,13 @@ class YDocumentManager {
     const doc = new Y.Doc();
     const awareness = new Awareness(doc);
 
-    const saved = await YDocStateModel.findOne({ documentId }).lean();
+    const saved = await YDocStateModel.findOne({ documentId });
 
     if (saved?.state) {
       try {
         Y.applyUpdate(doc, new Uint8Array(saved.state));
+        const text = doc.getText("content").toString();
+
       } catch (err) {
         console.error(
           `[YDocumentManager] Failed to restore document ${documentId}:`,
@@ -67,7 +69,7 @@ class YDocumentManager {
   private async persist(documentId: string, session: DocSession) {
     try {
       const state = Buffer.from(Y.encodeStateAsUpdate(session.doc));
-
+      
       await YDocStateModel.updateOne(
         { documentId },
         {
@@ -81,11 +83,19 @@ class YDocumentManager {
         }
       );
     } catch (err) {
-      console.error(
-        `[YDocumentManager] Persist failed for ${documentId}:`,
-        err
-      );
-    }
+        console.error(
+          `[YDocumentManager] Failed to restore document ${documentId}:`,
+          err
+        );
+
+        await YDocStateModel.deleteOne({
+          documentId,
+        });
+
+        console.warn(
+          `[YDocumentManager] Deleted corrupted persisted state for ${documentId}`
+        );
+      }
   }
 
   addConnection(documentId: string) {
