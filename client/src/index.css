@@ -157,3 +157,16 @@ code {
 .editor-area p {
   margin:8px 0;
 }
+
+@media (prefers-color-scheme: dark) {
+  .editor-area h1,
+  .editor-area h2,
+  .editor-area h3,
+  .editor-area h4,
+  .editor-area h5,
+  .editor-area h6,
+  .editor-area p,
+  .editor-area li {
+    color: #111827;
+  }
+}

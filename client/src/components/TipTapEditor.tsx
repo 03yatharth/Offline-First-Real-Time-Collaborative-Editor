@@ -1,14 +1,10 @@
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
+import Collaboration from "@tiptap/extension-collaboration";
 
 import * as Y from "yjs";
-import { SocketIOProvider } from "../collaboration/SocketIOProvider";
 
-import {
-  ySyncPlugin,
-  yCursorPlugin,
-  yUndoPlugin,
-} from "y-prosemirror";
+import { SocketIOProvider } from "../collaboration/SocketIOProvider";
 
 import {
   Bold,
@@ -21,44 +17,33 @@ import {
   Redo2,
 } from "lucide-react";
 
-import { Plugin } from "@tiptap/pm/state";
-
-interface TipTapEditorProps {
+interface Props {
   ydoc: Y.Doc;
   provider: SocketIOProvider;
 }
 
-export default function TipTapEditor({
-  ydoc,
-  provider,
-}: TipTapEditorProps) {
+export default function TipTapEditor({ ydoc }: Props) {
   const editor = useEditor({
     immediatelyRender: false,
 
-    extensions: [StarterKit],
+    extensions: [
+      StarterKit,
+
+      Collaboration.configure({
+        document: ydoc,
+      }),
+    ],
 
     editorProps: {
       attributes: {
         class: "editor-area",
       },
     },
-
-    onCreate({ editor }) {
-      const fragment = ydoc.getXmlFragment("prosemirror");
-
-      const plugins: Plugin[] = [
-        ySyncPlugin(fragment),
-        yCursorPlugin(provider.awareness),
-        yUndoPlugin(),
-      ];
-
-      plugins.forEach((plugin) => {
-        editor.registerPlugin(plugin);
-      });
-    },
   });
 
-  function ToolbarButton({
+  if (!editor) return null;
+
+  function Button({
     children,
     onClick,
     active = false,
@@ -68,86 +53,73 @@ export default function TipTapEditor({
     active?: boolean;
   }) {
     return (
-      <div
+      <button
+        onClick={onClick}
         style={{
-          display: "flex",
-          gap: 10,
-          alignItems: "center",
-          padding: "10px 14px",
+          width: 36,
+          height: 36,
+          borderRadius: 8,
+          background: active ? "#2563eb" : "#fff",
+          color: active ? "#fff" : "#374151",
+          border: "1px solid #d1d5db",
+          cursor: "pointer",
         }}
       >
-        <button
-          onClick={onClick}
-          style={{
-            width: 36,
-            height: 36,
-            borderRadius: 8,
-            background: active ? "#2563eb" : "#ffffff",
-            color: active ? "#ffffff" : "#374151",
-            border: "1px solid #d1d5db",
-            cursor: "pointer",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            transition: "all .15s ease",
-          }}
-        >
-          {children}
-        </button>
-      </div>
+        {children}
+      </button>
     );
-  }
-
-  if (!editor) {
-    return null;
   }
 
   return (
     <div className="editor-wrapper">
       <div className="toolbar">
-        <ToolbarButton
+        <Button
           active={editor.isActive("bold")}
           onClick={() => editor.chain().focus().toggleBold().run()}
         >
           <Bold size={18} />
-        </ToolbarButton>
+        </Button>
 
-        <ToolbarButton
+        <Button
           active={editor.isActive("italic")}
           onClick={() => editor.chain().focus().toggleItalic().run()}
         >
           <Italic size={18} />
-        </ToolbarButton>
+        </Button>
 
-        <ToolbarButton
+        <Button
           active={editor.isActive("strike")}
           onClick={() => editor.chain().focus().toggleStrike().run()}
         >
           <Strikethrough size={18} />
-        </ToolbarButton>
+        </Button>
 
-        <ToolbarButton
+        <Button
           active={editor.isActive("heading", { level: 2 })}
           onClick={() =>
             editor.chain().focus().toggleHeading({ level: 2 }).run()
           }
         >
           <Heading2 size={18} />
-        </ToolbarButton>
+        </Button>
 
-        <ToolbarButton
+        <Button
           active={editor.isActive("bulletList")}
-          onClick={() => editor.chain().focus().toggleBulletList().run()}
+          onClick={() =>
+            editor.chain().focus().toggleBulletList().run()
+          }
         >
           <List size={18} />
-        </ToolbarButton>
+        </Button>
 
-        <ToolbarButton
+        <Button
           active={editor.isActive("orderedList")}
-          onClick={() => editor.chain().focus().toggleOrderedList().run()}
+          onClick={() =>
+            editor.chain().focus().toggleOrderedList().run()
+          }
         >
           <ListOrdered size={18} />
-        </ToolbarButton>
+        </Button>
 
         <div
           style={{
@@ -157,17 +129,17 @@ export default function TipTapEditor({
           }}
         />
 
-        <ToolbarButton
+        <Button
           onClick={() => editor.chain().focus().undo().run()}
         >
           <Undo2 size={18} />
-        </ToolbarButton>
+        </Button>
 
-        <ToolbarButton
+        <Button
           onClick={() => editor.chain().focus().redo().run()}
         >
           <Redo2 size={18} />
-        </ToolbarButton>
+        </Button>
       </div>
 
       <div className="editor-container">
