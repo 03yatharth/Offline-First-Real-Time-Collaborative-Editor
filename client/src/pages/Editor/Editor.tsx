@@ -1,324 +1,213 @@
-import { useContext, useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+  import { useContext, useEffect, useState } from "react";
+  import { useNavigate, useParams } from "react-router-dom";
 
-import { AuthContext } from "../../context/AuthContext";
-import { useYDocument } from "../../hooks/useYDocument";
+  import { AuthContext } from "../../context/AuthContext";
+  import { useYDocument } from "../../hooks/useYDocument";
 
-import Collaborators from "../../components/Collaborators/Collaborators";
-import TipTapEditor from "../../components/TipTapEditor";
+  import Collaborators from "../../components/Collaborators/Collaborators";
+  import TipTapEditor from "../../components/TipTapEditor";
 
-import {
-  getDocumentById,
-  renameDocument,
-} from "../../services/documentApi";
+  import {
+    getDocumentById,
+    renameDocument,
+  } from "../../services/documentApi";
 
-import type { DocumentMetadata } from "../../types/document";
+  import type { DocumentMetadata } from "../../types/document";
 
-export default function Editor() {
-  const { id } = useParams();
+  import styles from "./Editor.module.css";
+  import { Pencil, ArrowLeft } from "lucide-react";
+import StatusBadge from "../../components/ui/StatusBadge";
 
-  const navigate = useNavigate();
+  export default function Editor() {
+    const { id } = useParams();
 
-  const auth = useContext(AuthContext);
+    const navigate = useNavigate();
 
-  const {
-    doc,
-    provider,
-    status,
-    synced,
-  } = useYDocument(id || "");
+    const auth = useContext(AuthContext);
 
-  const [document, setDocument] =
-    useState<DocumentMetadata | null>(null);
+    const {
+      doc,
+      provider,
+      status,
+      synced,
+    } = useYDocument(id || "");
 
-  const [editingTitle, setEditingTitle] =
-    useState(false);
+    const [document, setDocument] =
+      useState<DocumentMetadata | null>(null);
 
-  const [titleInput, setTitleInput] =
-    useState("");
+    const [editingTitle, setEditingTitle] =
+      useState(false);
 
-  useEffect(() => {
-    if (!provider || !auth?.user) return;
+    const [titleInput, setTitleInput] =
+      useState("");
 
-    provider.awareness.setLocalStateField("user", {
-      id: auth.user.id,
-      name: auth.user.username,
-    });
+    useEffect(() => {
+      if (!provider || !auth?.user) return;
 
-    return () => {
-      provider.awareness.setLocalState(null);
-    };
-  }, [provider, auth?.user]);
+      provider.awareness.setLocalStateField("user", {
+        id: auth.user.id,
+        name: auth.user.username,
+      });
 
-  useEffect(() => {
-    function handleJoinError() {
-      navigate("/", { replace: true });
-    }
+      return () => {
+        provider.awareness.setLocalState(null);
+      };
+    }, [provider, auth?.user]);
 
-    window.addEventListener(
-      "document:join-error",
-      handleJoinError
-    );
+    useEffect(() => {
+      function handleJoinError() {
+        navigate("/", { replace: true });
+      }
 
-    return () => {
-      window.removeEventListener(
+      window.addEventListener(
         "document:join-error",
         handleJoinError
       );
-    };
-  }, [navigate]);
 
-  useEffect(() => {
-    if (!id || id==undefined) return;
+      return () => {
+        window.removeEventListener(
+          "document:join-error",
+          handleJoinError
+        );
+      };
+    }, [navigate]);
 
-    async function loadDocument() {
+    useEffect(() => {
+      if (!id || id==undefined) return;
+
+      async function loadDocument() {
+        try {
+          if (!id || id==undefined) return;
+          const data = await getDocumentById(id);
+
+          setDocument(data);
+          setTitleInput(data.title);
+        } catch (error) {
+          console.error(error);
+        }
+      }
+
+      loadDocument();
+    }, [id]);
+
+    if (!id) {
+      return <div>Invalid document.</div>;
+    }
+
+    const isOwner =
+      document?.owner === auth?.user?.id;
+
+    async function saveTitle() {
+      if (!id || !document) return;
+
+      const trimmed = titleInput.trim();
+
+      if (!trimmed) {
+        setTitleInput(document.title);
+        setEditingTitle(false);
+        return;
+      }
+
+      if (trimmed === document.title) {
+        setEditingTitle(false);
+        return;
+      }
+
       try {
-        if (!id || id==undefined) return;
-        const data = await getDocumentById(id);
+        const updated = await renameDocument(
+          id,
+          trimmed
+        );
 
-        setDocument(data);
-        setTitleInput(data.title);
+        setDocument(updated);
+        setTitleInput(updated.title);
       } catch (error) {
         console.error(error);
+
+        setTitleInput(document.title);
       }
-    }
 
-    loadDocument();
-  }, [id]);
-
-  if (!id) {
-    return <div>Invalid document.</div>;
-  }
-
-  const isOwner =
-    document?.owner === auth?.user?.id;
-
-  async function saveTitle() {
-    if (!id || !document) return;
-
-    const trimmed = titleInput.trim();
-
-    if (!trimmed) {
-      setTitleInput(document.title);
       setEditingTitle(false);
-      return;
     }
+    return (
+    <div className={styles.page}>
+      {/* Header */}
 
-    if (trimmed === document.title) {
-      setEditingTitle(false);
-      return;
-    }
-
-    try {
-      const updated = await renameDocument(
-        id,
-        trimmed
-      );
-
-      setDocument(updated);
-      setTitleInput(updated.title);
-    } catch (error) {
-      console.error(error);
-
-      setTitleInput(document.title);
-    }
-
-    setEditingTitle(false);
-  }
-  return (
-  <div
-    style={{
-      maxWidth: 1100,
-      margin: "40px auto",
-      padding: "0 24px",
-    }}
-  >
-    {/* Header */}
-
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        marginBottom: 20,
-      }}
-    >
-      <button
-        onClick={() => navigate("/")}
-        style={{
-          padding: "8px 14px",
-          borderRadius: 8,
-          border: "1px solid #d1d5db",
-          cursor: "pointer",
-          background: "white",
-          color : "black",
-        }}
-      >
-        Dashboard
-      </button>
-
-      <div
-        style={{
-          flex: 1,
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          gap: 10,
-        }}
-      >
-        {editingTitle ? (
-          <input
-            autoFocus
-            value={titleInput}
-            onChange={(e) =>
-              setTitleInput(e.target.value)
-            }
-            onBlur={saveTitle}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                saveTitle();
-              }
-
-              if (e.key === "Escape") {
-                setTitleInput(document?.title ?? "");
-                setEditingTitle(false);
-              }
-            }}
-            style={{
-              fontSize: 24,
-              fontWeight: 600,
-              border: "1px solid #d1d5db",
-              borderRadius: 8,
-              padding: "6px 12px",
-              minWidth: 350,
-              textAlign: "center",
-            }}
-          />
-        ) : (
-          <>
-            <h2
-              style={{
-                margin: 0,
-                fontWeight: 600,
-              }}
-            >
-              {document?.title ?? "Loading..."}
-            </h2>
-
-            {isOwner && (
-              <button
-                onClick={() =>
-                  setEditingTitle(true)
-                }
-                title="Rename document"
-                style={{
-                  border: "none",
-                  background: "transparent",
-                  cursor: "pointer",
-                  fontSize: 18,
-                }}
-              >
-                ✏️
-              </button>
-            )}
-          </>
-        )}
-      </div>
-
-      <StatusBadge
-        status={status}
-        synced={synced}
-      />
-    </div>
-
-    {/* Collaborators */}
-
-    {provider && (
-      <div
-        style={{
-          marginBottom: 16,
-        }}
-      >
-        <Collaborators
-          awareness={provider.awareness}
-        />
-      </div>
-    )}
-
-    {/* Editor */}
-
-    <div
-      style={{
-        background: "#fff",
-        border: "1px solid #ddd",
-        borderRadius: 12,
-        overflow: "hidden",
-        boxShadow:
-          "0 4px 18px rgba(0,0,0,.08)",
-      }}
-    >
-      {doc && provider ? (
-        <TipTapEditor
-          ydoc={doc}
-          provider={provider}
-        />
-      ) : (
-        <div
-          style={{
-            padding: 40,
-            textAlign: "center",
-          }}
+      <div className={styles.header}>
+        <button
+          className={styles.backButton}
+          onClick={() => navigate("/")}
         >
-          Connecting...
+          <ArrowLeft size={16} />
+          Dashboard
+        </button>
+
+        <div className={styles.titleContainer}>
+          {editingTitle ? (
+            <input
+              autoFocus
+              className={styles.titleInput}
+              value={titleInput}
+              onChange={(e) => setTitleInput(e.target.value)}
+              onBlur={saveTitle}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") saveTitle();
+
+                if (e.key === "Escape") {
+                  setTitleInput(document?.title ?? "");
+                  setEditingTitle(false);
+                }
+              }}
+            />
+          ) : (
+            <>
+              <h2 className={styles.title}>
+                {document?.title ?? "Loading..."}
+              </h2>
+
+              {isOwner && (
+                <button
+                  className={styles.editButton}
+                  onClick={() => setEditingTitle(true)}
+                  title="Rename document"
+                >
+                  <Pencil size={16} />
+                </button>
+              )}
+            </>
+          )}
+        </div>
+
+        <StatusBadge
+          status={status}
+          synced={synced}
+        />
+      </div>
+
+      {/* Collaborators */}
+
+      {provider && (
+       <div className={styles.collaborators}>
+          <Collaborators
+            awareness={provider.awareness}
+          />
         </div>
       )}
+
+      {/* Editor */}
+
+      <div className={styles.editorContainer}>
+        {doc && provider ? (
+          <TipTapEditor
+            ydoc={doc}
+            provider={provider}
+          />
+        ) : (
+          <div className={styles.loading}>
+            Connecting...
+          </div>
+        )}
+      </div>
     </div>
-  </div>
-);
-}
-function StatusBadge({
-  status,
-  synced,
-}: {
-  status: "connecting" | "connected" | "disconnected";
-  synced: boolean;
-}) {
-  const label =
-    status === "disconnected"
-      ? "Offline — edits saved locally, will sync on reconnect"
-      : status === "connecting"
-      ? "Connecting..."
-      : synced
-      ? "Synced"
-      : "Syncing...";
-
-  const color =
-    status === "disconnected"
-      ? "#b45309"
-      : status === "connected" && synced
-      ? "#15803d"
-      : "#6b7280";
-
-  return (
-    <span
-      style={{
-        fontSize: 13,
-        color,
-        display: "flex",
-        alignItems: "center",
-        gap: 6,
-      }}
-    >
-      <span
-        style={{
-          width: 8,
-          height: 8,
-          borderRadius: "50%",
-          background: color,
-          display: "inline-block",
-        }}
-      />
-      {label}
-    </span>
   );
 }

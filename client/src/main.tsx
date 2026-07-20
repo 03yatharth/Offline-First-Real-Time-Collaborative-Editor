@@ -1,9 +1,14 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import './index.css'
 import App from './App.tsx'
 import { BrowserRouter } from 'react-router-dom'
 import { AuthProvider } from "./context/AuthContext";
+import "./styles/variables.css";
+import "./styles/global.css";
+import "./styles/buttons.css";
+import "./styles/forms.css";
+import "./styles/cards.css";
+import "./styles/modal.css";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

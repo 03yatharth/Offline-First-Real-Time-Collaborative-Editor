@@ -4,8 +4,13 @@ import styles from "./DocumentModal.module.css";
 interface DocumentModalProps {
   isOpen: boolean;
   title: string;
+
   initialValue?: string;
+  placeholder?: string;
+  inputType?: "text" | "email";
+
   confirmText: string;
+
   onClose: () => void;
   onConfirm: (value: string) => Promise<void> | void;
 }
@@ -17,6 +22,8 @@ export default function DocumentModal({
   confirmText,
   onClose,
   onConfirm,
+  placeholder = "Enter value",
+  inputType = "text",
 }: DocumentModalProps) {
   const [value, setValue] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -57,10 +64,10 @@ export default function DocumentModal({
         <form onSubmit={handleSubmit}>
           <input
             autoFocus
-            type="text"
+            type={inputType}
             value={value}
             onChange={(e) => setValue(e.target.value)}
-            placeholder="Document title"
+            placeholder={placeholder}
             className={styles.input}
           />
 

@@ -18,6 +18,10 @@ import {
 import type { DocumentMetadata } from "../../types/document";
 
 import styles from "./Dashboard.module.css";
+import Navbar from "../../components/ui/Navbar/Navbar";
+import UserMenu from "../../components/ui/UserMenu";
+import Spinner from "../../components/ui/Spinner";
+import EmptyState from "../../components/ui/EmptyState";
 
 
 export default function Dashboard() {
@@ -43,6 +47,9 @@ export default function Dashboard() {
 
   const [documentToDelete, setDocumentToDelete] =
     useState<DocumentMetadata | null>(null);
+  
+  const [shareDocument, setShareDocument] =
+  useState<DocumentMetadata | null>(null);
 
   useEffect(() => {
     loadDocuments();
@@ -137,27 +144,26 @@ export default function Dashboard() {
     }
   }
 
-  async function handleShare(document: DocumentMetadata) {
-    const email = window.prompt(
-      "Enter collaborator email:"
-    );
+  function handleShare(document: DocumentMetadata) {
+    setShareDocument(document);
+  }
 
-    if (!email) return;
+  async function handleShareConfirm(email: string) {
+    if (!shareDocument) return;
 
     try {
       await addCollaborator(
-        document._id,
+        shareDocument._id,
         email
       );
 
       await loadDocuments();
 
+      setShareDocument(null);
+
     } catch (error) {
       console.error(error);
-
-      setPageError(
-        "Failed to share document."
-      );
+      setPageError("Failed to share document.");
     }
   }
 
@@ -215,7 +221,17 @@ export default function Dashboard() {
 
   return (
     <div className={styles.page}>
-
+      <Navbar
+        rightContent={
+          <UserMenu 
+            user={{
+              name: user?.username ?? "",
+              email: user?.email ?? "",
+            }}
+            onLogout={handleLogout}
+          />
+        }
+      />
       <DocumentModal
         isOpen={isModalOpen}
         title={
@@ -224,11 +240,22 @@ export default function Dashboard() {
             : "Create Document"
         }
         initialValue={editingDocument?.title}
+        placeholder="Document title"
         confirmText={
           editingDocument ? "Save" : "Create"
         }
         onClose={() => setIsModalOpen(false)}
         onConfirm={handleModalConfirm}
+      />
+
+      <DocumentModal
+        isOpen={shareDocument !== null}
+        title="Share Document"
+        placeholder="Enter collaborator email"
+        inputType="email"
+        confirmText="Share"
+        onClose={() => setShareDocument(null)}
+        onConfirm={handleShareConfirm}
       />
 
       <ConfirmDialog
@@ -243,31 +270,7 @@ export default function Dashboard() {
         onConfirm={confirmDelete}
       />
 
-      <div className={styles.header}>
-        <div className={styles.titleSection}>
-          <h1>Offline-First Collaborative Editor</h1>
-          <p>
-            Welcome, <strong>{user?.username}</strong>
-          </p>
-        </div>
-
-        <div className={styles.actions}>
-          <button
-            className={styles.logoutButton}
-            onClick={handleLogout}
-          >
-            Logout
-          </button>
-
-          <button
-            className={styles.createButton}
-            onClick={handleCreateClick}
-            disabled={creating}
-          >
-            {creating ? "Creating..." : "+ New Document"}
-          </button>
-        </div>
-      </div>
+      
 
       {joinError && (
         <div className={styles.error}>
@@ -281,17 +284,30 @@ export default function Dashboard() {
         </div>
       )}
 
-      
+      <div className={styles.header}>
+        <div className={styles.titleSection}>
+          <h1>Documents</h1>
+          <p>Your collaborative workspace</p>
+        </div>
+
+        <button
+          className={styles.createButton}
+          onClick={handleCreateClick}
+          disabled={creating}
+        >
+          {creating ? "Creating..." : "New Document"}
+        </button>
+      </div>
 
       {loading ? (
-        <div className={styles.loading}>
-          Loading documents...
-        </div>
+        <Spinner label="Loading documents..." />
       ) : documents.length === 0 ? (
-        <div className={styles.emptyState}>
-          <h2>No documents yet</h2>
-          <p>Create your first collaborative document.</p>
-        </div>
+        <EmptyState
+          title="No documents"
+          description="Create your first collaborative document."
+          actionLabel="New Document"
+          onAction={handleCreateClick}
+        />
       ) : (
         <div className={styles.documents}>
           {documents.map((document) => (

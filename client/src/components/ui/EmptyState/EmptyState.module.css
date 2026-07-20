@@ -1,0 +1,53 @@
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  padding: 80px 24px;
+
+  text-align: center;
+}
+
+.icon {
+  width: 64px;
+  height: 64px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 12px;
+
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+
+  color: var(--text-secondary);
+
+  margin-bottom: 20px;
+}
+
+.emptyState h2 {
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.emptyState p {
+  margin: 10px 0 24px;
+  color: var(--text-secondary);
+}
+
+.button {
+  border: none;
+  border-radius: 8px;
+
+  background: var(--primary);
+  color: white;
+
+  padding: 8px 16px;
+
+  cursor: pointer;
+}
+
+.button:hover {
+  background: var(--primary-hover);
+}

@@ -17,9 +17,35 @@ import {
   Redo2,
 } from "lucide-react";
 
+import styles from "./TipTapEditor.module.css";
+
 interface Props {
   ydoc: Y.Doc;
   provider: SocketIOProvider;
+}
+
+interface ToolbarButtonProps {
+  children: React.ReactNode;
+  onClick: () => void;
+  active?: boolean;
+}
+
+function ToolbarButton({
+  children,
+  onClick,
+  active = false,
+}: ToolbarButtonProps) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`${styles.button} ${
+        active ? styles.active : ""
+      }`}
+    >
+      {children}
+    </button>
+  );
 }
 
 export default function TipTapEditor({ ydoc }: Props) {
@@ -36,113 +62,80 @@ export default function TipTapEditor({ ydoc }: Props) {
 
     editorProps: {
       attributes: {
-        class: "editor-area",
+        class: styles.editor,
       },
     },
   });
 
   if (!editor) return null;
 
-  function Button({
-    children,
-    onClick,
-    active = false,
-  }: {
-    children: React.ReactNode;
-    onClick: () => void;
-    active?: boolean;
-  }) {
-    return (
-      <button
-        onClick={onClick}
-        style={{
-          width: 36,
-          height: 36,
-          borderRadius: 8,
-          background: active ? "#2563eb" : "#fff",
-          color: active ? "#fff" : "#374151",
-          border: "1px solid #d1d5db",
-          cursor: "pointer",
-        }}
-      >
-        {children}
-      </button>
-    );
-  }
-
   return (
-    <div className="editor-wrapper">
-      <div className="toolbar">
-        <Button
+    <div className={styles.wrapper}>
+      <div className={styles.toolbar}>
+        <ToolbarButton
           active={editor.isActive("bold")}
           onClick={() => editor.chain().focus().toggleBold().run()}
         >
           <Bold size={18} />
-        </Button>
+        </ToolbarButton>
 
-        <Button
+        <ToolbarButton
           active={editor.isActive("italic")}
           onClick={() => editor.chain().focus().toggleItalic().run()}
         >
           <Italic size={18} />
-        </Button>
+        </ToolbarButton>
 
-        <Button
+        <ToolbarButton
           active={editor.isActive("strike")}
           onClick={() => editor.chain().focus().toggleStrike().run()}
         >
           <Strikethrough size={18} />
-        </Button>
+        </ToolbarButton>
 
-        <Button
+        <ToolbarButton
           active={editor.isActive("heading", { level: 2 })}
           onClick={() =>
             editor.chain().focus().toggleHeading({ level: 2 }).run()
           }
         >
           <Heading2 size={18} />
-        </Button>
+        </ToolbarButton>
 
-        <Button
+        <ToolbarButton
           active={editor.isActive("bulletList")}
           onClick={() =>
             editor.chain().focus().toggleBulletList().run()
           }
         >
           <List size={18} />
-        </Button>
+        </ToolbarButton>
 
-        <Button
+        <ToolbarButton
           active={editor.isActive("orderedList")}
           onClick={() =>
             editor.chain().focus().toggleOrderedList().run()
           }
         >
           <ListOrdered size={18} />
-        </Button>
+        </ToolbarButton>
 
-        <div
-          style={{
-            width: 1,
-            background: "#ddd",
-            margin: "0 8px",
-          }}
-        />
+        <div className={styles.divider} />
 
-        <Button
+        <ToolbarButton
           onClick={() => editor.chain().focus().undo().run()}
         >
           <Undo2 size={18} />
-        </Button>
+        </ToolbarButton>
 
-        <Button
+        <ToolbarButton
           onClick={() => editor.chain().focus().redo().run()}
         >
           <Redo2 size={18} />
-        </Button>
+        </ToolbarButton>
       </div>
 
-      <div className="editor-container">
+      <div className={styles.editorContainer}>
         <EditorContent editor={editor} />
       </div>
     </div>

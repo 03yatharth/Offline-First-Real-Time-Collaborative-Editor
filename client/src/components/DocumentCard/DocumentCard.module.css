@@ -1,0 +1,99 @@
+.card {
+  background: #fcfdff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+
+  padding: 18px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+  transition: all .2s ease;
+}
+
+.card:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, .05);
+  background:white;
+  transform: translateY(-2px);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.icon {
+  width: 36px;
+  height: 36px;
+
+  border-radius: 8px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.title {
+  margin: 0;
+
+  font-size: 1rem;
+  font-weight: 600;
+
+  color: #111827;
+
+  line-height: 1.4;
+
+  word-break: break-word;
+}
+
+.updated {
+  margin: 0;
+
+  font-size: .85rem;
+
+  color: #6b7280;
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+
+  margin-top: auto;
+
+  padding-top: 14px;
+
+  border-top: 1px solid var(--border-color);
+}
+
+.openButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  border: none;
+  border-radius: 8px;
+
+  background: #111827;
+  color: white;
+
+  padding: 6px 12px;
+  height: 34px;
+
+  cursor: pointer;
+
+  font-size: .875rem;
+  font-weight: 500;
+
+  transition: .2s;
+}
+
+.openButton:hover {
+  background: #1f2937;
+}

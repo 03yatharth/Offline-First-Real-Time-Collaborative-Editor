@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import * as awarenessProtocol from "y-protocols/awareness.js";
 
+import styles from "./Collaborators.module.css";
+
 interface UserPresence {
   id: string;
   name: string;
@@ -10,11 +12,13 @@ interface Props {
   awareness: awarenessProtocol.Awareness;
 }
 
-export default function Collaborators({ awareness }: Props) {
+export default function Collaborators({
+  awareness,
+}: Props) {
   const [users, setUsers] = useState<UserPresence[]>([]);
 
   useEffect(() => {
-    const updateUsers = () => {
+    function updateUsers() {
       const unique = new Map<string, UserPresence>();
 
       awareness.getStates().forEach((state) => {
@@ -26,7 +30,7 @@ export default function Collaborators({ awareness }: Props) {
       });
 
       setUsers(Array.from(unique.values()));
-    };
+    }
 
     updateUsers();
 
@@ -38,29 +42,26 @@ export default function Collaborators({ awareness }: Props) {
   }, [awareness]);
 
   return (
-    <div>
-      <strong>Online ({users.length})</strong>
+    <div className={styles.container}>
+      <span className={styles.label}>
+        Online ({users.length})
+      </span>
 
-      <div
-        style={{
-          display: "flex",
-          gap: 8,
-          marginTop: 8,
-          flexWrap: "wrap",
-        }}
-      >
+      <div className={styles.users}>
         {users.map((user) => (
-          <span
+          <div
             key={user.id}
-            style={{
-              background: "#eef2ff",
-              padding: "6px 12px",
-              borderRadius: 999,
-              fontSize: 13,
-            }}
+            className={styles.user}
+            title={user.name}
           >
-            {user.name}
-          </span>
+            <div className={styles.avatar}>
+              {user.name.charAt(0).toUpperCase()}
+            </div>
+
+            <span className={styles.name}>
+              {user.name}
+            </span>
+          </div>
         ))}
       </div>
     </div>
