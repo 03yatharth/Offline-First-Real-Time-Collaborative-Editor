@@ -15,7 +15,6 @@ export function createDocument(
   });
 }
 
-
 export function renameDocument(
   id: string,
   title: string
@@ -28,13 +27,11 @@ export function renameDocument(
   );
 }
 
-
 export function deleteDocument(
   id: string
 ): Promise<void> {
   return api.delete<void>(`/documents/${id}`);
 }
-
 
 export function addCollaborator(
   documentId: string,
@@ -48,12 +45,19 @@ export function addCollaborator(
   );
 }
 
-
 export function removeCollaborator(
   documentId: string,
   userId: string
 ): Promise<DocumentMetadata> {
   return api.delete<DocumentMetadata>(
     `/documents/${documentId}/collaborators/${userId}`
+  );
+}
+
+export function getDocumentById(
+  id: string
+): Promise<DocumentMetadata> {
+  return api.get<DocumentMetadata>(
+    `/documents/${id}`
   );
 }

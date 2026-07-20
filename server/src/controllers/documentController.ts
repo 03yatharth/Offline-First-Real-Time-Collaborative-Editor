@@ -215,7 +215,7 @@ export const deleteDocument = async(
     });
   }
 };
-
+  
 
 
 // Add collaborator

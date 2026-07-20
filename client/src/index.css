@@ -109,3 +109,51 @@ code {
   padding: 4px 8px;
   background: var(--code-bg);
 }
+
+.editor-wrapper {
+  width: 100%;
+}
+
+
+.toolbar {
+  display: flex;
+  gap: 8px;
+  padding: 10px;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+
+.toolbar button {
+  padding:6px 12px;
+  border-radius:6px;
+  border:1px solid #555;
+  background:#1f2937;
+  color:white;
+  cursor:pointer;
+}
+
+
+.toolbar button:hover {
+  background:#374151;
+}
+
+
+.editor-container {
+  background: white;
+}
+
+
+.editor-area {
+  min-height: 550px;
+  padding: 28px;
+  background: white;
+  color: #111827;
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+
+.editor-area p {
+  margin:8px 0;
+}
