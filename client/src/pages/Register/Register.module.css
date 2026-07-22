@@ -36,7 +36,7 @@
 
 .card button {
   border: none;
-  background: #2563eb;
+  background: --color-primary;
   color: white;
   padding: 12px;
   border-radius: 8px;
@@ -44,7 +44,7 @@
 }
 
 .card button:hover {
-  background: #1d4ed8;
+  background: --color-primary-hover;
 }
 
 .card button:disabled {

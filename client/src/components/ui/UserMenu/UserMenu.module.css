@@ -14,11 +14,13 @@
 
   border-radius: 50%;
 
+  background: #dbeafe;
+  color: var(--color-primary);
+
   font-size: 0.875rem;
   font-weight: 600;
 
-  background:#dbeafe;
-  color:#2563eb;
+  flex-shrink: 0;
 }
 
 .info {
@@ -29,12 +31,12 @@
 .name {
   font-size: 0.9rem;
   font-weight: 600;
-  color: #111827;
+  color: var(--color-text);
 }
 
 .email {
   font-size: 0.75rem;
-  color: #6b7280;
+  color: var(--color-text-secondary);
 }
 
 .logout {
@@ -48,9 +50,48 @@
   font-size: 0.875rem;
   font-weight: 500;
 
-  color: #374151;
+  color: var(--color-text-secondary);
+
+  transition: var(--transition);
 }
 
 .logout:hover {
-  color: #2563eb;
+  color: var(--color-primary);
+}
+
+@media (max-width: 768px) {
+  .email {
+    display: none;
+  }
+
+  .name {
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .logout {
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .info {
+    display: none;
+  }
+
+  .userMenu {
+    gap: 8px;
+  }
+
+  .avatar {
+    width: 32px;
+    height: 32px;
+    font-size: 0.8rem;
+  }
+
+  .logout {
+    font-size: 0.8rem;
+  }
 }

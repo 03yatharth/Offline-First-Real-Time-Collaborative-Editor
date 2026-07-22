@@ -1,36 +1,57 @@
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.45);
 
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
+
+  background: rgba(0, 0, 0, 0.45);
 
   z-index: 1000;
 }
 
 .modal {
-  width: 420px;
-  background: white;
-  border-radius: 10px;
+  width: min(420px, 95%);
+
   padding: 24px;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+
+  background: var(--color-surface);
+
+  border-radius: var(--radius-md);
+
+  box-shadow: var(--shadow-md);
 }
 
 .modal h2 {
-  margin-top: 0;
-  margin-bottom: 20px;
+  margin: 0 0 20px;
+  color: var(--color-text);
 }
 
 .input {
   width: 100%;
+
   padding: 12px;
+
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+
+  background: var(--color-surface);
+  color: var(--color-text);
+
   font-size: 15px;
-  border-radius: 6px;
-  border: 1px solid #d1d5db;
-  margin-bottom: 20px;
+
   box-sizing: border-box;
+
+  margin-bottom: 20px;
+
+  outline: none;
+
+  transition: var(--transition);
+}
+
+.input:focus {
+  border-color: var(--color-primary);
 }
 
 .actions {
@@ -42,18 +63,31 @@
 .cancel,
 .confirm {
   padding: 10px 18px;
-  border-radius: 6px;
-  cursor: pointer;
+
   border: none;
+  border-radius: var(--radius-sm);
+
+  cursor: pointer;
+
+  transition: var(--transition);
 }
 
 .cancel {
-  background: #e5e7eb;
+  background: var(--color-surface-secondary);
+  color: var(--color-text);
+}
+
+.cancel:hover {
+  background: #eef2f7;
 }
 
 .confirm {
-  background: #2563eb;
+  background: var(--color-primary);
   color: white;
+}
+
+.confirm:hover:not(:disabled) {
+  background: var(--color-primary-hover);
 }
 
 .confirm:disabled {

@@ -5,35 +5,32 @@
 
   padding: 14px 16px;
 
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: var(--color-surface);
+
+  border: 1px solid var(--color-border);
   border-left: 4px solid;
 
   border-radius: var(--radius-lg);
 
-  box-shadow:
-  0 12px 24px rgba(0,0,0,.12),
-  0 2px 6px rgba(0,0,0,.08);
+  box-shadow: var(--shadow-md);
 
   animation: slideIn 180ms ease;
-  background: var(--color-background);
-  backdrop-filter: blur(8px);
 }
 
 .success {
-  border-left-color: var(--success);
+  border-left-color: var(--color-success);
 }
 
 .error {
-  border-left-color: var(--danger);
+  border-left-color: var(--color-danger);
 }
 
 .warning {
-  border-left-color: var(--warning);
+  border-left-color: var(--color-warning);
 }
 
 .info {
-  border-left-color: var(--primary);
+  border-left-color: var(--color-primary);
 }
 
 .icon {
@@ -49,14 +46,16 @@
   margin: 0;
 
   font-weight: 600;
-  color: var(--text-primary);
+
+  color: var(--color-text);
 }
 
 .description {
   margin-top: 4px;
 
   font-size: 0.9rem;
-  color: var(--text-secondary);
+
+  color: var(--color-text-secondary);
 }
 
 .closeButton {
@@ -67,13 +66,15 @@
   background: transparent;
   border: none;
 
-  color: var(--text-secondary);
+  color: var(--color-text-secondary);
 
   cursor: pointer;
+
+  transition: var(--transition);
 }
 
 .closeButton:hover {
-  color: var(--text-primary);
+  color: var(--color-text);
 }
 
 .leaving {

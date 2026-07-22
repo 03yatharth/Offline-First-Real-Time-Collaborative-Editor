@@ -6,7 +6,7 @@
 }
 
 .container {
-  max-width: 1200px;
+  max-width: var(--container-width);
   height: 100%;
 
   margin: 0 auto;
@@ -31,22 +31,48 @@
   align-items: center;
   justify-content: center;
 
-  border-radius: 8px;
-
-  background: #111827;
-  color: #ffffff;
-
   flex-shrink: 0;
+
+  border-radius: var(--radius-sm);
+
+  background: var(--color-primary);
+  color: white;
 }
 
 .title {
   font-size: 1rem;
   font-weight: 600;
-  color: #111827;
+  color: var(--color-text);
 }
 
 .actions {
   display: flex;
   align-items: center;
   gap: 16px;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 0 16px;
+  }
+
+  .title {
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    gap: 12px;
+  }
+
+  .brand {
+    min-width: 0;
+  }
+
+  .title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }

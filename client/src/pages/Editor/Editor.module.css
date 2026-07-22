@@ -17,8 +17,8 @@
   align-items: center;
   gap: 6px;
 
-  border: 1px solid var(--border-color);
-  background: var(--bg-surface);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
 
   border-radius: 8px;
 
@@ -50,7 +50,7 @@
 .titleInput {
   width: 380px;
 
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--color-border);
   border-radius: 8px;
 
   padding: 8px 12px;
@@ -70,11 +70,11 @@
 
   cursor: pointer;
 
-  color: var(--text-secondary);
+  color: var(--color-text-secondary);
 }
 
 .editButton:hover {
-  color: var(--text-primary);
+  color: var(--color-text);
 }
 
 .editorContainer {
@@ -91,7 +91,7 @@
 .loading {
   padding: 48px;
   text-align: center;
-  color: var(--text-secondary);
+  color: var(--color-text-secondary);
 }
 
 .collaborators{

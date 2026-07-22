@@ -3,8 +3,8 @@
   inset: 0;
 
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
 
   background: rgba(0, 0, 0, 0.45);
 
@@ -12,24 +12,28 @@
 }
 
 .dialog {
-  width: 420px;
-
-  background: white;
-
-  border-radius: 10px;
+  width: min(420px, 95%);
 
   padding: 24px;
 
-  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.2);
+  background: var(--color-surface);
+
+  border-radius: var(--radius-md);
+
+  box-shadow: var(--shadow-md);
 }
 
 .dialog h2 {
-  margin-top: 0;
+  margin: 0;
+  color: var(--color-text);
 }
 
 .dialog p {
   margin: 18px 0 28px;
-  color: #4b5563;
+
+  color: var(--color-text-secondary);
+
+  line-height: 1.6;
 }
 
 .actions {
@@ -41,16 +45,29 @@
 .cancel,
 .delete {
   padding: 10px 18px;
+
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
+
   cursor: pointer;
+
+  transition: var(--transition);
 }
 
 .cancel {
-  background: #e5e7eb;
+  background: var(--color-surface-secondary);
+  color: var(--color-text);
+}
+
+.cancel:hover {
+  background: #eef2f7;
 }
 
 .delete {
-  background: #dc2626;
+  background: var(--color-danger);
   color: white;
+}
+
+.delete:hover {
+  opacity: 0.9;
 }

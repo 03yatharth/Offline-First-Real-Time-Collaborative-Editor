@@ -91,13 +91,14 @@ export default function Login() {
         <button
           type="submit"
           disabled={loading}
+          className = {styles.log}
         >
           {loading ? "Signing in..." : "Login"}
         </button>
 
         <p>
           Don't have an account?{" "}
-          <Link to="/register">
+          <Link to="/register" className={styles.reg}>
             Register
           </Link>
         </p>

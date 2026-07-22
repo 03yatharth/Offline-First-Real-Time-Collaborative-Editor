@@ -18,19 +18,19 @@
   margin: 0;
   font-size: 2rem;
   font-weight: 700;
-  color: #111827;
+  color: var(--color-text);
 }
 
 .titleSection p {
   margin-top: 6px;
-  color: #6b7280;
+  color: var(--color-text-secondary);
   font-size: 0.95rem;
 }
 
 .createButton {
   border: none;
   border-radius: 8px;
-  background: #111827;
+  background: var(--color-primary);
   color: white;
 
   padding: 10px 18px;
@@ -44,7 +44,7 @@
 }
 
 .createButton:hover {
-  background: #1f2937;
+  background: var(--color-primary-hover);
 }
 
 .createButton:disabled {
@@ -54,8 +54,7 @@
 
 .documents {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 320px));
-  justify-content: center;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 24px;
 }
 
@@ -77,7 +76,6 @@
 
   color: #b91c1c;
 }
-
 @media (max-width: 768px) {
   .page {
     padding: 24px 16px;
@@ -86,6 +84,7 @@
   .header {
     flex-direction: column;
     align-items: stretch;
+    gap: 20px;
   }
 
   .createButton {
@@ -94,5 +93,34 @@
 
   .documents {
     grid-template-columns: 1fr;
+  }
+
+  .email {
+    display: none;
+  }
+
+  .userName {
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 480px) {
+  .page {
+    padding: 16px;
+  }
+
+  .titleSection h1 {
+    font-size: 1.6rem;
+  }
+
+  .titleSection p {
+    font-size: 0.9rem;
+  }
+
+  .header {
+    gap: 16px;
   }
 }

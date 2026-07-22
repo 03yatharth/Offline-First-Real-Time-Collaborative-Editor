@@ -15,14 +15,14 @@
   border-radius: 50%;
 
   border: 3px solid #e5e7eb;
-  border-top-color: var(--primary);
+  border-top-color: var(--color-primary);
 
   animation: spin .8s linear infinite;
 }
 
 .container p {
   margin: 0;
-  color: var(--text-secondary);
+  color: var(--color-text-secondary);
 }
 
 @keyframes spin {

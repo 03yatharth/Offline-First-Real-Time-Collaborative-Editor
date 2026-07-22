@@ -266,7 +266,7 @@ export default function Dashboard() {
         title="Delete Document"
         message={
           documentToDelete
-            ? `Are you sur̥e you want to delete "${documentToDelete.title}"?`
+            ? `Are you sure you want to delete "${documentToDelete.title}"?`
             : ""
         }
         onCancel={() => setDocumentToDelete(null)}
