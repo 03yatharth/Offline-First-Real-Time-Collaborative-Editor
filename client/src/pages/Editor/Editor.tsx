@@ -1,7 +1,7 @@
   import { useContext, useEffect, useState } from "react";
   import { useNavigate, useParams } from "react-router-dom";
 
-  import { AuthContext } from "../../context/AuthContext";
+  import { AuthContext } from "../../contexts/AuthContext";
   import { useYDocument } from "../../hooks/useYDocument";
 
   import Collaborators from "../../components/Collaborators/Collaborators";

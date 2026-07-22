@@ -22,6 +22,7 @@ import Navbar from "../../components/ui/Navbar/Navbar";
 import UserMenu from "../../components/ui/UserMenu";
 import Spinner from "../../components/ui/Spinner";
 import EmptyState from "../../components/ui/EmptyState";
+import { useToast } from "../../hooks/useToast";
 
 
 export default function Dashboard() {
@@ -31,19 +32,10 @@ export default function Dashboard() {
   const [documents, setDocuments] = useState<DocumentMetadata[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
-
-  const [joinError, setJoinError] = useState("");
-
-  function isAuthError(error: unknown) {
-    return (
-      error instanceof Error &&
-      error.message === "Invalid or expired token"
-    );
-  }
-  const [pageError, setPageError] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const toast = useToast();
   const [editingDocument, setEditingDocument] =
-    useState<DocumentMetadata | null>(null);
+  useState<DocumentMetadata | null>(null);
 
   const [documentToDelete, setDocumentToDelete] =
     useState<DocumentMetadata | null>(null);
@@ -54,6 +46,14 @@ export default function Dashboard() {
   useEffect(() => {
     loadDocuments();
   }, []);
+
+
+  function isAuthError(error: unknown) {
+    return (
+      error instanceof Error &&
+      error.message === "Invalid or expired token"
+    );
+  }
 
   async function loadDocuments() {
     try {
@@ -68,7 +68,10 @@ export default function Dashboard() {
         return;
       }
 
-      setPageError("Failed to load documents.");
+      toast.error(
+        "Failed to load documents",
+        "Please try again."
+      );
     } finally {
       setLoading(false);
     }
@@ -90,7 +93,10 @@ export default function Dashboard() {
         message: string;
       }>;
 
-      setJoinError(customEvent.detail.message);
+      toast.error(
+        "Unable to join document",
+        customEvent.detail.message
+      );
     }
 
     window.addEventListener(
@@ -119,7 +125,9 @@ export default function Dashboard() {
             doc._id === updated._id ? updated : doc
           )
         );
-
+        toast.success(
+          "Document renamed"
+        );
         setIsModalOpen(false);
         return;
       }
@@ -138,7 +146,10 @@ export default function Dashboard() {
         return;
       }
 
-      setPageError("Failed to save document.");
+      toast.error(
+        "Failed to save document",
+        "Please try again."
+      );
     } finally {
       setCreating(false);
     }
@@ -158,12 +169,17 @@ export default function Dashboard() {
       );
 
       await loadDocuments();
-
+      toast.success(
+        "Collaborator added"
+      );
       setShareDocument(null);
 
     } catch (error) {
       console.error(error);
-      setPageError("Failed to share document.");
+      toast.error(
+        "Failed to share document",
+        "Please check the email address."
+      );
     }
   }
 
@@ -182,6 +198,9 @@ export default function Dashboard() {
           (doc) => doc._id !== documentToDelete._id
         )
       );
+      toast.success(
+        "Document deleted"
+      );
     } catch (error) {
       console.error(error);
 
@@ -189,7 +208,10 @@ export default function Dashboard() {
         return;
       }
 
-      setPageError("Failed to delete document.");
+      toast.error(
+        "Failed to delete document",
+        "Please try again."
+      );
     } finally {
       setDocumentToDelete(null);
     }
@@ -198,26 +220,6 @@ export default function Dashboard() {
   function handleLogout() {
     logout();
   }
-
-  useEffect(() => {
-    if (!joinError) return;
-
-    const timer = setTimeout(() => {
-      setJoinError("");
-    }, 4000);
-
-    return () => clearTimeout(timer);
-  }, [joinError]);
-
-  useEffect(() => {
-    if (!pageError) return;
-
-    const timer = setTimeout(() => {
-      setPageError("");
-    }, 4000);
-
-    return () => clearTimeout(timer);
-  }, [pageError]);
 
   return (
     <div className={styles.page}>
@@ -232,6 +234,7 @@ export default function Dashboard() {
           />
         }
       />
+
       <DocumentModal
         isOpen={isModalOpen}
         title={
@@ -270,19 +273,6 @@ export default function Dashboard() {
         onConfirm={confirmDelete}
       />
 
-      
-
-      {joinError && (
-        <div className={styles.error}>
-          {joinError}
-        </div>
-      )}
-
-      {pageError && (
-        <div className={styles.error}>
-          {pageError}
-        </div>
-      )}
 
       <div className={styles.header}>
         <div className={styles.titleSection}>
@@ -305,8 +295,14 @@ export default function Dashboard() {
         <EmptyState
           title="No documents"
           description="Create your first collaborative document."
-          actionLabel="New Document"
-          onAction={handleCreateClick}
+          action={
+            <button
+              className={styles.createButton}
+              onClick={handleCreateClick}
+            >
+              New Document
+            </button>
+          }
         />
       ) : (
         <div className={styles.documents}>

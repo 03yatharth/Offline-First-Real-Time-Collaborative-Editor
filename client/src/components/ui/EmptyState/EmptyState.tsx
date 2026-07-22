@@ -1,37 +1,32 @@
-import { FileText } from "lucide-react";
+import type { ReactNode } from "react";
+import { FileText, type LucideIcon } from "lucide-react";
+
 import styles from "./EmptyState.module.css";
 
 interface EmptyStateProps {
+  icon?: LucideIcon;
   title: string;
   description: string;
-  actionLabel?: string;
-  onAction?: () => void;
+  action?: ReactNode;
 }
 
 export default function EmptyState({
+  icon: Icon = FileText,
   title,
   description,
-  actionLabel,
-  onAction,
+  action,
 }: EmptyStateProps) {
   return (
-    <div className={styles.emptyState}>
+    <div className={styles.container}>
       <div className={styles.icon}>
-        <FileText size={36} />
+        <Icon />
       </div>
 
-      <h2>{title}</h2>
+      <h2 className={styles.title}>{title}</h2>
 
-      <p>{description}</p>
+      <p className={styles.description}>{description}</p>
 
-      {actionLabel && onAction && (
-        <button
-          className={styles.button}
-          onClick={onAction}
-        >
-          {actionLabel}
-        </button>
-      )}
+      {action && <div className={styles.action}>{action}</div>}
     </div>
   );
 }
