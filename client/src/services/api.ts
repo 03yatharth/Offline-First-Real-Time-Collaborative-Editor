@@ -11,6 +11,16 @@ function getHeaders() {
   };
 }
 
+export class ApiError extends Error {
+  status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+  }
+}
+
 async function request<T>(
   endpoint: string,
   options: RequestInit = {}
@@ -30,11 +40,16 @@ async function request<T>(
       window.dispatchEvent(new Event("auth:logout"));
     }
 
-    throw new Error(error.message || "Something went wrong");
+    throw new ApiError(
+      error.message || "Something went wrong",
+      response.status
+    );
   }
 
   return response.json();
 }
+
+
 
 export const api = {
   get<T>(endpoint: string) {

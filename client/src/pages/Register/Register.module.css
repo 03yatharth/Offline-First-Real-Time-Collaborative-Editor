@@ -3,12 +3,12 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background: #f8fafc;
+  background: var(--color-page);
 }
 
 .card {
   width: 360px;
-  background: white;
+  background: var(--color-surface);
   padding: 32px;
   border-radius: 12px;
   box-shadow: 0 10px 25px rgba(0,0,0,.08);
@@ -24,31 +24,62 @@
 
 .card p {
   margin: 0;
-  color: #6b7280;
+  color: var(--color-text-secondary);
+}
+
+.card a {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.card a:hover {
+  text-decoration: underline;
 }
 
 .card input {
   padding: 12px;
   border-radius: 8px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--color-border);
   font-size: 15px;
 }
 
 .card button {
+  width: 100%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 12px 16px;
+
   border: none;
-  background: --color-primary;
-  color: white;
-  padding: 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
+
+  background: var(--color-primary);
+  color: #fff;
+
+  font-size: 0.95rem;
+  font-weight: 600;
+
   cursor: pointer;
+
+  transition: var(--transition);
+
+  box-shadow: var(--shadow-sm);
 }
 
-.card button:hover {
-  background: --color-primary-hover;
+.card button:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+  box-shadow: var(--shadow-md);
+}
+
+.card button:active:not(:disabled) {
+  transform: translateY(1px);
 }
 
 .card button:disabled {
-  opacity: .7;
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 
 .error {

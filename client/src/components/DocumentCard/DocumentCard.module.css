@@ -97,3 +97,39 @@
 .openButton:hover {
   background: var(--color-primary-hover);
 }
+
+.menuButton {
+  width: 32px;
+  height: 32px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: none;
+  border-radius: 8px;
+
+  background: transparent;
+  color: var(--color-text-secondary);
+
+  cursor: pointer;
+  transition: var(--transition);
+
+  flex-shrink: 0;
+}
+
+.menuButton:hover {
+  background: var(--color-surface-secondary);
+  color: var(--color-text);
+}
+
+.menuButton:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.menuButton svg {
+  width: 18px;
+  height: 18px;
+  background: transparent;
+}

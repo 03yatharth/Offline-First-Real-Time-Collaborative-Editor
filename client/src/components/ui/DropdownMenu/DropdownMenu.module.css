@@ -1,8 +1,6 @@
 .dropdown {
   position: relative;
   background:white;
-  border:1px solid var(--color-border);
-  box-shadow:var(--shadow-md);
 }
 
 .trigger {

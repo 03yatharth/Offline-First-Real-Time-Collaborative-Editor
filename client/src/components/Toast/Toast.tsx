@@ -22,7 +22,7 @@ export function Toast({ toast, onRemove }: ToastProps) {
 
   const timerRef = useRef<number>(0);
   const remainingRef = useRef(AUTO_DISMISS_MS);
-  const startRef = useRef(Date.now());
+  const startRef = useRef(0);
 
   const startTimer = () => {
     startRef.current = Date.now();

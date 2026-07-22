@@ -23,6 +23,7 @@ import UserMenu from "../../components/ui/UserMenu";
 import Spinner from "../../components/ui/Spinner";
 import EmptyState from "../../components/ui/EmptyState";
 import { useToast } from "../../hooks/useToast";
+import { ApiError } from "../../services/api";
 
 
 export default function Dashboard() {
@@ -145,6 +146,13 @@ export default function Dashboard() {
       if (isAuthError(error)) {
         return;
       }
+      if (error instanceof ApiError && error.status === 403) {
+        toast.error(
+          "Not authorized",
+          "Only the document owner can rename this document."
+        );
+        return;
+      }
 
       toast.error(
         "Failed to save document",
@@ -176,6 +184,15 @@ export default function Dashboard() {
 
     } catch (error) {
       console.error(error);
+
+      if (error instanceof ApiError && error.status === 403) {
+        toast.error(
+          "Not authorized",
+          "Only the document owner can share this document."
+        );
+        return;
+      }
+
       toast.error(
         "Failed to share document",
         "Please check the email address."
@@ -205,6 +222,14 @@ export default function Dashboard() {
       console.error(error);
 
       if (isAuthError(error)) {
+        return;
+      }
+
+      if (error instanceof ApiError && error.status === 403) {
+        toast.error(
+          "Not authorized",
+          "Only the document owner can delete this document."
+        );
         return;
       }
 

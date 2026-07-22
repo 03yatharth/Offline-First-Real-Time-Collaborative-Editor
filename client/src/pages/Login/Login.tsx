@@ -98,7 +98,7 @@ export default function Login() {
 
         <p>
           Don't have an account?{" "}
-          <Link to="/register" className={styles.reg}>
+          <Link to="/register">
             Register
           </Link>
         </p>
